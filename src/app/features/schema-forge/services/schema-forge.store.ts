@@ -68,6 +68,21 @@ function mergeConfig(saved: Partial<ProjectConfig> | null | undefined): ProjectC
   };
 }
 
+function rootKeys(schema: SchemaAnalysis | null): ReadonlySet<string> {
+  const root = schema?.models.find((model) => model.id === schema.rootModelId);
+  return new Set(root?.properties.map((property) => property.key) ?? []);
+}
+
+/** Two documents are the same when most of their root properties coincide. */
+export function isSameDocument(previous: ReadonlySet<string>, next: ReadonlySet<string>): boolean {
+  const largest = Math.max(previous.size, next.size);
+  if (largest === 0) {
+    return true;
+  }
+  const shared = [...next].filter((key) => previous.has(key)).length;
+  return shared / largest >= 0.5;
+}
+
 /** Removes keys whose value is `undefined` so the configuration stays minimal. */
 function compact<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T;
@@ -82,6 +97,14 @@ export class SchemaForgeStore {
   private readonly analysisService = inject(JsonAnalysisService);
   private readonly storage = inject(BrowserStorageService);
   private analysisRun = 0;
+  /** Root property names of the last valid document, to recognize a different document. */
+  private documentKeys: ReadonlySet<string> | null = null;
+  private pendingReplacement = false;
+
+  /** Incremented whenever a pasted document resets the previous document's settings. */
+  readonly documentResets = signal(0);
+  /** Incremented to ask the structure panel to focus the root model name input. */
+  readonly focusRootName = signal(0);
 
   readonly examples = JSON_EXAMPLES;
 
@@ -274,6 +297,7 @@ export class SchemaForgeStore {
           }
           this.analysis.set(result);
           if (result.valid) {
+            this.checkReplacedDocument(result.schema);
             this.lastSchema.set(result.schema);
           } else if (!text.trim()) {
             this.lastSchema.set(null);
@@ -338,8 +362,45 @@ export class SchemaForgeStore {
     this.startDocument(toModelName(baseName, DEFAULT_ROOT_NAME), text);
   }
 
+  /**
+   * Called when a paste replaced the whole editor content. Once the new text is analyzed, a
+   * different document resets the root name and the per-path settings of the previous one.
+   */
+  documentReplaced(): void {
+    this.pendingReplacement = true;
+  }
+
+  private checkReplacedDocument(schema: SchemaAnalysis | null): void {
+    const keys = rootKeys(schema);
+    if (this.pendingReplacement) {
+      this.pendingReplacement = false;
+      if (this.documentKeys !== null && !isSameDocument(this.documentKeys, keys)) {
+        this.resetDocumentSettings();
+      }
+    }
+    this.documentKeys = keys;
+  }
+
+  private resetDocumentSettings(): void {
+    const config = this.config();
+    const customized =
+      config.rootName !== DEFAULT_ROOT_NAME ||
+      Object.keys(config.properties).length > 0 ||
+      Object.keys(config.models).length > 0;
+    if (!customized) {
+      return;
+    }
+    this.config.set({ ...config, rootName: DEFAULT_ROOT_NAME, models: {}, properties: {} });
+    this.selectedPropertyId.set(null);
+    this.selectedFilePath.set(null);
+    this.selectedFileModelId.set(null);
+    this.documentResets.update((count) => count + 1);
+  }
+
   /** Replaces the document, keeping generation options but dropping per-path settings. */
   private startDocument(rootName: string, text: string): void {
+    this.pendingReplacement = false;
+    this.documentKeys = null;
     this.config.update((config) => ({ ...config, rootName, models: {}, properties: {} }));
     // The previous structure belongs to another document and must not be shown as stale.
     this.lastSchema.set(null);
@@ -351,6 +412,8 @@ export class SchemaForgeStore {
 
   /** Clears the input, the configuration and the selection. */
   clearProject(): void {
+    this.pendingReplacement = false;
+    this.documentKeys = null;
     this.config.set(createDefaultConfig());
     this.selectedPropertyId.set(null);
     this.selectedFilePath.set(null);

@@ -291,7 +291,17 @@ export function resolveSchema(
       }
     }
     const unique = uniqueName(name, used);
-    if (unique !== base) {
+    const rootName = modelNames.get(analysis.rootModelId);
+    if (id !== analysis.rootModelId && base.toLowerCase() === rootName?.toLowerCase()) {
+      // Usually the root keeps a name chosen for another document (e.g. `Cliente` for an
+      // order that contains a `cliente` object).
+      diagnostics.push({
+        severity: 'warning',
+        code: 'root-name-conflict',
+        message: `O objeto "${model.sourceKey ?? model.id}" tem o mesmo nome do modelo principal ("${rootName}") e foi gerado como "${unique}". Se "${rootName}" não descreve o JSON inteiro, renomeie o modelo principal.`,
+        propertyId: model.id.replace(/(\/\*)+$/, ''),
+      });
+    } else if (unique !== base) {
       diagnostics.push({
         severity: 'info',
         code: 'name-conflict',

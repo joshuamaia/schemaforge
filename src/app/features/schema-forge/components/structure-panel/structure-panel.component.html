@@ -31,8 +31,11 @@
     <span class="root-icon" aria-hidden="true"><sf-icon name="box" [size]="15" /></span>
     <label for="sf-root-name">Modelo principal</label>
     <input
+      #rootNameInput
       id="sf-root-name"
       class="root-input mono"
+      [class.root-input--conflict]="rootNameConflict()"
+      [attr.aria-describedby]="rootNameConflict() ? 'sf-root-name-conflict' : null"
       spellcheck="false"
       autocomplete="off"
       [value]="store.config().rootName"
@@ -43,6 +46,12 @@
     @let objects = store.status().objects;
     <span class="sf-chip">{{ objects }} {{ objects === 1 ? 'modelo' : 'modelos' }}</span>
   </div>
+  @if (rootNameConflict(); as conflict) {
+    <div class="root-conflict" id="sf-root-name-conflict" role="status">
+      <sf-icon name="triangle-alert" [size]="14" />
+      <span>{{ conflict.message }}</span>
+    </div>
+  }
 }
 
 @if (store.schemaIsStale()) {

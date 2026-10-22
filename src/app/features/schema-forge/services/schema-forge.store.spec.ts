@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { JSON_EXAMPLES } from '../models/examples';
 import { CLIENTE_JSON } from '../testing/test-helpers';
-import { ANALYSIS_DEBOUNCE_MS, SchemaForgeStore } from './schema-forge.store';
+import { ANALYSIS_DEBOUNCE_MS, SchemaForgeStore, isSameDocument } from './schema-forge.store';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -105,6 +105,68 @@ describe('SchemaForgeStore', () => {
   it('names the root model after an imported file', () => {
     store.importJson('pedido-de-venda.json', '{"a": 1}');
     expect(store.config().rootName).toBe('PedidoDeVenda');
+  });
+
+  describe('pasting a whole document', () => {
+    const PEDIDO = '{"id": 1, "numeroPedido": "P1", "cliente": {"nome": "Maria"}, "itens": []}';
+
+    beforeEach(() => {
+      // The initial document is the "Cliente simples" example, named "Cliente".
+      store.updateProperty('#/nome', { validations: { notBlank: true } });
+    });
+
+    it('resets the root name and settings of the previous document', async () => {
+      store.setJson(PEDIDO);
+      store.documentReplaced();
+      await settle();
+      expect(store.config().rootName).toBe('Root');
+      expect(store.config().properties).toEqual({});
+      expect(store.documentResets()).toBe(1);
+      expect(store.files().map((file) => file.name)).toEqual(['Root.java', 'Cliente.java']);
+    });
+
+    it('keeps the settings when the same document is pasted again', async () => {
+      store.setJson(store.jsonText().replace('34', '35'));
+      store.documentReplaced();
+      await settle();
+      expect(store.config().rootName).toBe('Cliente');
+      expect(store.config().properties['#/nome']).toBeDefined();
+      expect(store.documentResets()).toBe(0);
+    });
+
+    it('keeps the settings when the document is edited by typing', async () => {
+      store.setJson(PEDIDO);
+      await settle();
+      expect(store.config().rootName).toBe('Cliente');
+    });
+
+    it('waits until the pasted JSON is valid before comparing', async () => {
+      store.setJson('{"id": 1, "numeroPedido": ');
+      store.documentReplaced();
+      await settle();
+      expect(store.config().rootName).toBe('Cliente');
+      store.setJson(PEDIDO);
+      await settle();
+      expect(store.config().rootName).toBe('Root');
+    });
+  });
+
+  it('warns when a nested model has the same name as the root model', async () => {
+    store.setJson('{"id": 1, "cliente": {"nome": "Maria"}}');
+    await settle();
+    const conflict = store.diagnostics().find((d) => d.code === 'root-name-conflict');
+    expect(conflict).toMatchObject({ severity: 'warning', propertyId: '#/cliente' });
+    expect(conflict?.message).toContain('"Cliente2"');
+    store.setRootName('Pedido');
+    expect(store.diagnostics().some((d) => d.code === 'root-name-conflict')).toBe(false);
+  });
+
+  it('recognizes the same document by its root properties', () => {
+    expect(isSameDocument(new Set(['a', 'b', 'c', 'd']), new Set(['a', 'b', 'c', 'x']))).toBe(true);
+    expect(isSameDocument(new Set(['a', 'b', 'c', 'd']), new Set(['a', 'x', 'y', 'z']))).toBe(
+      false,
+    );
+    expect(isSameDocument(new Set(), new Set())).toBe(true);
   });
 
   it('clears the project', async () => {

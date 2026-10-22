@@ -61,6 +61,14 @@ export class WorkspaceComponent {
 
   constructor() {
     effect(() => this.storage.write(SIZES_KEY, this.sizes()));
+
+    // On small screens the root model name lives in the "Estrutura" tab.
+    const initialFocusRequests = this.store.focusRootName();
+    effect(() => {
+      if (this.store.focusRootName() !== initialFocusRequests) {
+        this.selectedTab.set(1);
+      }
+    });
   }
 
   protected resizeBy(index: 0 | 1, deltaPx: number): void {

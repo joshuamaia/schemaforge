@@ -1,10 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltip } from '@angular/material/tooltip';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { EditorMarker, MonacoEditorComponent } from '../../editors/monaco-editor.component';
+import {
+  EditorMarker,
+  EditorPaste,
+  MonacoEditorComponent,
+} from '../../editors/monaco-editor.component';
 import { JsonExample } from '../../models/examples';
 import { JsonAnalysisService } from '../../services/json-analysis.service';
 import { SchemaForgeStore } from '../../services/schema-forge.store';
@@ -33,6 +44,22 @@ export class JsonPanelComponent {
   private readonly notifications = inject(NotificationService);
   private readonly analysis = inject(JsonAnalysisService);
 
+  constructor() {
+    // Tell the user when a pasted document reset the previous document's settings.
+    effect(() => {
+      if (this.store.documentResets() > 0) {
+        untracked(() =>
+          this.notifications.withAction(
+            'Novo documento detectado: o modelo principal voltou a se chamar "Root" e as ' +
+              'personalizações do JSON anterior foram descartadas.',
+            'Renomear',
+            () => this.store.focusRootName.update((count) => count + 1),
+          ),
+        );
+      }
+    });
+  }
+
   protected readonly markers = computed<EditorMarker[]>(() =>
     this.store
       .inputDiagnostics()
@@ -44,8 +71,14 @@ export class JsonPanelComponent {
       })),
   );
 
-  /** Pretty prints pasted JSON when the whole document is valid. */
-  protected async onPaste(text: string): Promise<void> {
+  /**
+   * Pretty prints pasted JSON when the whole document is valid. A paste that replaces the
+   * whole document may be a different JSON, so the store checks whether it is a new document.
+   */
+  protected async onPaste({ text, replacedAll }: EditorPaste): Promise<void> {
+    if (replacedAll) {
+      this.store.documentReplaced();
+    }
     const formatted = await this.analysis.format(text);
     // Skip if the user kept typing while a large document was being formatted.
     if (formatted !== null && formatted !== text && this.store.jsonText() === text) {

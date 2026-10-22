@@ -21,6 +21,12 @@ import { Monaco, MonacoLoaderService, monacoTheme } from './monaco-loader.servic
 
 export type EditorLanguage = 'json' | 'java' | 'typescript';
 
+export interface EditorPaste {
+  readonly text: string;
+  /** The paste replaced (or filled) the whole document. */
+  readonly replacedAll: boolean;
+}
+
 /** Above this size, programmatic replacements skip the undo stack for speed. */
 const LARGE_TEXT = 500_000;
 
@@ -97,7 +103,7 @@ export class MonacoEditorComponent {
 
   readonly valueChange = output<string>();
   /** Emits the full text after a paste operation. */
-  readonly pasted = output<string>();
+  readonly pasted = output<EditorPaste>();
 
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly loader = inject(MonacoLoaderService);
@@ -300,7 +306,18 @@ export class MonacoEditorComponent {
           this.valueChange.emit(value);
         }
       }),
-      editor.onDidPaste(() => this.pasted.emit(editor.getValue())),
+      editor.onDidPaste(({ range }) => {
+        const full = model.getFullModelRange();
+        this.pasted.emit({
+          text: editor.getValue(),
+          // The pasted text is now the whole document (it replaced or filled the editor).
+          replacedAll:
+            range.startLineNumber === 1 &&
+            range.startColumn === 1 &&
+            range.endLineNumber === full.endLineNumber &&
+            range.endColumn === full.endColumn,
+        });
+      }),
     );
   }
 }

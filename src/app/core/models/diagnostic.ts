@@ -19,6 +19,7 @@ export type DiagnosticCode =
   | 'invalid-type'
   | 'invalid-name'
   | 'name-conflict'
+  | 'root-name-conflict'
   | 'invalid-option';
 
 /** A problem found in the input JSON or in the generation configuration. */

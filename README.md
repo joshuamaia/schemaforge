@@ -35,6 +35,19 @@ qualquer servidor de arquivos (GitHub Pages, Netlify, Nginx…).
    usado exatamente como digitado quando é um identificador válido (`ClienteDTO` continua
    `ClienteDTO`); textos com espaços ou acentos são convertidos (`pedido de venda` →
    `PedidoDeVenda`).
+
+   O nome do modelo principal pertence ao documento:
+   - carregar um exemplo usa o nome do exemplo, e importar um arquivo usa o nome do arquivo;
+   - **colar um JSON diferente substituindo todo o conteúdo do editor** faz o nome voltar a
+     `Root` e descarta as personalizações do JSON anterior. Uma notificação avisa e oferece
+     **Renomear**, que leva direto ao campo do modelo principal. Colar de novo o mesmo JSON (a
+     maioria das propriedades da raiz em comum) mantém nome e personalizações;
+   - editar o JSON digitando não altera o nome.
+
+   Se uma classe aninhada coincidir com o nome do modelo principal (ex.: modelo principal
+   `Cliente` num JSON de pedido que contém `cliente`), um aviso aparece abaixo do campo do modelo
+   principal e na lista de problemas.
+
 3. Clique em uma propriedade da árvore para abrir o editor de propriedades, organizado em abas:
    - **Identificação**: nome original, nome gerado, tipo de dado, descrição e nome do modelo
      aninhado;
@@ -149,8 +162,9 @@ declaração do código gerado — inclusive ao alternar o formato de saída.
 - Em caso de conflito, o nome do modelo pai é usado como prefixo quando acrescenta informação
   (`cobranca.endereco` e `entrega.endereco` → `Endereco` e `EntregaEndereco`). Prefixos
   redundantes não são criados: um objeto `cliente` dentro do modelo principal `Cliente` vira
-  `Cliente2`, e não `ClienteCliente`. Qualquer modelo aninhado pode ser renomeado no editor da
-  propriedade.
+  `Cliente2`, e não `ClienteCliente`. Esse caso gera um aviso, porque geralmente indica que o
+  modelo principal está com o nome errado. Qualquer modelo aninhado pode ser renomeado no
+  editor da propriedade.
 - O sufixo de classe não é repetido: modelo `ClienteDTO` com sufixo `DTO` gera `ClienteDTO`.
 - Nada é presumido pelo nome do campo: `email` não ganha `@Email`, valores não viram dinheiro e
   CPF/CEP/telefone continuam texto. Validações só existem se forem configuradas.
@@ -212,7 +226,9 @@ config (personalizações, separadas do JSON) ───────────�
   `@NotNull`, ausência de regras não configuradas, regras incompatíveis ou inválidas descartadas,
   as mesmas regras em Class/Record/Lombok e a definição de tipo de campos não inferidos. Para
   nomes: nome configurado do modelo principal preservado, classes aninhadas sem prefixos
-  redundantes e sufixo de classe sem repetição.
+  redundantes, sufixo de classe sem repetição, aviso de conflito com o modelo principal e
+  redefinição do nome ao colar um documento diferente (mas não ao colar o mesmo documento ou
+  digitar).
 - `npm run test:compile`: gera código para todos os exemplos e para um JSON de estresse em todas
   as variações de formato/opções e compila com `javac --release 21` (com stubs das anotações
   Jakarta, Jackson e Lombok) e com o compilador TypeScript em modo `strict`. Se o `javac` não

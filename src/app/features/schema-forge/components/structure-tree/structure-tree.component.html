@@ -1,0 +1,145 @@
+@let active = activeRow();
+<ul
+  class="tree"
+  role="tree"
+  tabindex="0"
+  aria-label="Propriedades identificadas. Use as setas para navegar, Enter para editar e Delete para incluir ou excluir."
+  [attr.aria-activedescendant]="active?.domId"
+  (keydown)="onKeydown($event)"
+>
+  @for (row of rows(); track row.property.id) {
+    <li
+      role="treeitem"
+      class="row"
+      [id]="row.domId"
+      [attr.aria-level]="row.depth"
+      [attr.aria-expanded]="row.hasChildren ? row.expanded : null"
+      [attr.aria-selected]="store.selectedPropertyId() === row.property.id"
+      [class.selected]="store.selectedPropertyId() === row.property.id"
+      [class.active]="active === row"
+      [class.excluded]="!row.included"
+      [style.--depth]="row.depth - 1"
+      (click)="select(row)"
+    >
+      <span class="indent" aria-hidden="true"></span>
+      @if (row.hasChildren) {
+        <button
+          type="button"
+          class="chevron"
+          tabindex="-1"
+          [attr.aria-label]="row.expanded ? 'Recolher' : 'Expandir'"
+          (click)="toggle(row, $event)"
+        >
+          <sf-icon [name]="row.expanded ? 'chevron-down' : 'chevron-right'" [size]="14" />
+        </button>
+      } @else {
+        <span class="chevron-spacer"></span>
+      }
+
+      <span class="kind" [class]="'kind kind--' + row.tone" aria-hidden="true">
+        @switch (row.tone) {
+          @case ('object') {
+            <sf-icon name="braces" [size]="13" />
+          }
+          @case ('array') {
+            <sf-icon name="brackets" [size]="13" />
+          }
+          @case ('number') {
+            <sf-icon name="hash" [size]="13" />
+          }
+          @case ('boolean') {
+            <sf-icon name="toggle" [size]="13" />
+          }
+          @case ('string') {
+            <sf-icon name="type" [size]="13" />
+          }
+          @default {
+            <sf-icon name="circle-alert" [size]="13" />
+          }
+        }
+      </span>
+
+      <span class="name">
+        {{ row.property.key || '(vazio)' }}
+        @if (row.required) {
+          <span class="required" matTooltip="Obrigatório" aria-label="obrigatório">*</span>
+        }
+      </span>
+
+      <span class="type" [class]="'type type--' + row.tone">{{ row.typeLabel }}</span>
+      @if (row.customType) {
+        <span class="sf-chip custom" [matTooltip]="'Tipo personalizado: ' + row.customType">
+          → {{ row.customType }}
+        </span>
+      }
+
+      <span class="badges">
+        @if (row.typeUndefined) {
+          <span
+            class="sf-chip undefined-type"
+            matTooltip="Tipo não inferido: clique para definir"
+            (click)="defineType(row, $event)"
+          >
+            definir tipo
+          </span>
+        }
+        @if (!row.required) {
+          <span class="sf-chip" matTooltip="Opcional: pode estar ausente">opcional</span>
+        }
+        @if (row.nullable) {
+          <span class="sf-chip" matTooltip="Aceita valor nulo">null</span>
+        }
+        @if (row.validationCount > 0) {
+          <span
+            class="sf-chip validations"
+            [matTooltip]="row.validationCount + ' validação(ões) configurada(s)'"
+          >
+            <sf-icon name="shield-check" [size]="11" />{{ row.validationCount }}
+          </span>
+        }
+        @if (row.issue) {
+          <span
+            class="issue"
+            [class.issue--error]="row.issue === 'error'"
+            [matTooltip]="row.issue === 'error' ? 'Possui erros' : 'Possui avisos'"
+          >
+            <sf-icon [name]="row.issue === 'error' ? 'circle-x' : 'triangle-alert'" [size]="13" />
+          </span>
+        }
+      </span>
+
+      <span class="actions">
+        <button
+          type="button"
+          class="action"
+          tabindex="-1"
+          matTooltip="Editar propriedade"
+          aria-label="Editar propriedade"
+          (click)="select(row)"
+        >
+          <sf-icon name="pencil" [size]="13" />
+        </button>
+        <button
+          type="button"
+          class="action"
+          tabindex="-1"
+          matTooltip="Configurar validações"
+          aria-label="Configurar validações"
+          (click)="openValidations(row, $event)"
+        >
+          <sf-icon name="shield-check" [size]="13" />
+        </button>
+        <button
+          type="button"
+          class="action"
+          tabindex="-1"
+          [matTooltip]="row.included ? 'Remover da geração' : 'Incluir na geração'"
+          [attr.aria-label]="row.included ? 'Remover da geração' : 'Incluir na geração'"
+          (click)="toggleIncluded(row, $event)"
+        >
+          <sf-icon [name]="row.included ? 'eye' : 'eye-off'" [size]="13" />
+        </button>
+      </span>
+    </li>
+  }
+</ul>

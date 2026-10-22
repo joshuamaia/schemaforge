@@ -1,0 +1,401 @@
+@let prop = property();
+<section class="editor" [attr.aria-label]="'Configurações de ' + prop.key">
+  <header class="editor-header">
+    <div class="heading">
+      <span class="eyebrow">Propriedade</span>
+      <h3>{{ prop.key || '(vazio)' }}</h3>
+    </div>
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Restaurar configuração inferida"
+      aria-label="Restaurar configuração inferida"
+      (click)="reset()"
+    >
+      <sf-icon name="reset" />
+    </button>
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Fechar"
+      aria-label="Fechar configurações"
+      (click)="store.selectProperty(null)"
+    >
+      <sf-icon name="x" />
+    </button>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Seções da propriedade">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [id]="'sf-prop-tab-' + tab.id"
+        [attr.aria-selected]="store.editorTab() === tab.id"
+        [attr.aria-controls]="'sf-prop-panel-' + tab.id"
+        [class.active]="store.editorTab() === tab.id"
+        (click)="store.editorTab.set(tab.id)"
+      >
+        <sf-icon [name]="tab.icon" [size]="14" />
+        {{ tab.label }}
+        @if (tab.id === 'validations' && validationCount() > 0) {
+          <span class="tab-count">{{ validationCount() }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  @if (needsTypeDefinition()) {
+    <div class="type-definition" [class.type-definition--done]="typeOverride()">
+      <sf-icon [name]="typeOverride() ? 'circle-check' : 'triangle-alert'" [size]="16" />
+      <div class="type-definition-text">
+        <strong>
+          {{ typeOverride() ? 'Tipo definido manualmente' : 'Tipo não pôde ser inferido' }}
+        </strong>
+        <span>
+          @if (typeOverride()) {
+            Aplicado ao Java e ao TypeScript.
+          } @else {
+            Sem definição, será gerado como <code>Object</code> / <code>unknown</code>.
+          }
+        </span>
+      </div>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="type-select">
+        <mat-label>{{ isArray() ? 'Tipo dos itens' : 'Tipo do campo' }}</mat-label>
+        <mat-select
+          [value]="typeOverride()"
+          (selectionChange)="setTypeOverride($event.value)"
+          placeholder="Definir…"
+        >
+          <mat-option [value]="null">Não definido</mat-option>
+          @for (choice of typeChoices; track choice[0]) {
+            <mat-option [value]="choice[0]">{{ choice[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  }
+
+  @if (diagnostics().length > 0) {
+    <ul class="notes">
+      @for (diagnostic of diagnostics(); track $index) {
+        <li [class]="'note note--' + diagnostic.severity">
+          <sf-icon
+            [name]="
+              diagnostic.severity === 'error'
+                ? 'circle-x'
+                : diagnostic.severity === 'warning'
+                  ? 'triangle-alert'
+                  : 'info'
+            "
+            [size]="14"
+          />
+          {{ diagnostic.message }}
+        </li>
+      }
+    </ul>
+  }
+
+  @switch (store.editorTab()) {
+    @case ('identity') {
+      <fieldset
+        class="group"
+        role="tabpanel"
+        id="sf-prop-panel-identity"
+        aria-labelledby="sf-prop-tab-identity"
+      >
+        <legend class="sr-only">Identificação</legend>
+        <div class="grid">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Nome original</mat-label>
+            <input matInput [value]="prop.key" readonly />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Nome gerado</mat-label>
+            <input
+              matInput
+              [value]="settings().generatedName ?? ''"
+              [placeholder]="defaultName()"
+              (input)="setText('generatedName', $event)"
+              spellcheck="false"
+            />
+            <mat-hint>Padrão: {{ defaultName() }}</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="type-summary">
+          <span class="label">Tipo de dado</span>
+          <span class="sf-chip mono">{{ inferredLabel() }}</span>
+          <span class="arrow">Java</span>
+          <code>{{ settings().javaType || inferredJavaType() }}</code>
+          <span class="arrow">TS</span>
+          <code>{{ settings().tsType || inferredTsType() }}</code>
+        </div>
+        @if (occurrences(); as text) {
+          <p class="hint">{{ text }}</p>
+        }
+
+        @if (childModel()) {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full">
+            <mat-label>Nome do modelo aninhado</mat-label>
+            <input
+              matInput
+              [value]="childModelName()"
+              [placeholder]="childModelSuggestion()"
+              (input)="setChildModelName($event)"
+              spellcheck="false"
+            />
+            <mat-hint>Derivado da propriedade: {{ childModelSuggestion() }}</mat-hint>
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="full">
+          <mat-label>Descrição (opcional)</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            [value]="settings().description ?? ''"
+            (input)="setText('description', $event)"
+          ></textarea>
+          <mat-hint>Gerada como Javadoc / TSDoc</mat-hint>
+        </mat-form-field>
+      </fieldset>
+    }
+
+    @case ('settings') {
+      <fieldset
+        class="group"
+        role="tabpanel"
+        id="sf-prop-panel-settings"
+        aria-labelledby="sf-prop-tab-settings"
+      >
+        <legend class="sr-only">Configurações</legend>
+        <div class="toggles">
+          <mat-slide-toggle
+            [checked]="required()"
+            (change)="setRequired($event.checked)"
+            matTooltip="Obrigatório: a propriedade sempre está presente (TypeScript sem '?')"
+          >
+            Obrigatório
+          </mat-slide-toggle>
+          <mat-slide-toggle
+            [checked]="nullable()"
+            (change)="setNullable($event.checked)"
+            matTooltip="Permite o valor null (TypeScript '| null')"
+          >
+            Permitir nulo
+          </mat-slide-toggle>
+          <mat-slide-toggle
+            [checked]="included()"
+            (change)="setIncluded($event.checked)"
+            matTooltip="Desative para remover a propriedade do código gerado"
+          >
+            Incluir na geração
+          </mat-slide-toggle>
+        </div>
+
+        <div class="grid">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tipo Java personalizado</mat-label>
+            <input
+              matInput
+              spellcheck="false"
+              [value]="settings().javaType ?? ''"
+              [placeholder]="inferredJavaType()"
+              [matAutocomplete]="javaTypes"
+              (input)="setText('javaType', $event)"
+            />
+            <mat-autocomplete
+              #javaTypes="matAutocomplete"
+              (optionSelected)="update({ javaType: $event.option.value })"
+            >
+              @for (type of javaSuggestions; track type) {
+                <mat-option [value]="type">{{ type }}</mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>Ex.: LocalDate, OffsetDateTime, UUID</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tipo TypeScript personalizado</mat-label>
+            <input
+              matInput
+              spellcheck="false"
+              [value]="settings().tsType ?? ''"
+              [placeholder]="inferredTsType()"
+              [matAutocomplete]="tsTypes"
+              (input)="setText('tsType', $event)"
+            />
+            <mat-autocomplete
+              #tsTypes="matAutocomplete"
+              (optionSelected)="update({ tsType: $event.option.value })"
+            >
+              @for (type of tsSuggestions; track type) {
+                <mat-option [value]="type">{{ type }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+      </fieldset>
+    }
+
+    @case ('validations') {
+      <fieldset
+        class="group"
+        role="tabpanel"
+        id="sf-prop-panel-validations"
+        aria-labelledby="sf-prop-tab-validations"
+      >
+        <legend class="sr-only">Validações</legend>
+        <p class="hint first">
+          Anotações Jakarta Validation para um campo do tipo <strong>{{ categoryLabel() }}</strong
+          >. Regras incompatíveis com o tipo ficam bloqueadas.
+        </p>
+        @if (isTypeScript()) {
+          <p class="hint warn">
+            As validações aparecem apenas na saída Java. Selecione Java Class, Record ou Lombok para
+            vê-las no código.
+          </p>
+        } @else if (!store.config().java.jakartaValidation) {
+          <p class="hint warn">
+            Jakarta Validation está desativado.
+            <button
+              type="button"
+              class="link"
+              (click)="store.updateJava({ jakartaValidation: true })"
+            >
+              Ativar agora
+            </button>
+          </p>
+        }
+
+        <div class="rules">
+          @for (key of flagRules; track key) {
+            @let compatible = isCompatible(key);
+            <div
+              class="rule"
+              [class.rule--incompatible]="!compatible"
+              [matTooltip]="compatible ? '' : incompatibleReason(key)"
+            >
+              <mat-checkbox
+                [checked]="isActive(key)"
+                [disabled]="!compatible && !isActive(key)"
+                (change)="setFlag(key, $event.checked)"
+              >
+                <code>{{ ruleLabel(key) }}</code>
+              </mat-checkbox>
+              @if (!compatible && isActive(key)) {
+                <span class="sf-chip warn">incompatível</span>
+              }
+            </div>
+          }
+
+          <!-- @Size -->
+          @let sizeOk = isCompatible('size');
+          <div
+            class="rule rule--wide"
+            [class.rule--incompatible]="!sizeOk"
+            [matTooltip]="sizeOk ? '' : incompatibleReason('size')"
+          >
+            <mat-checkbox
+              [checked]="isActive('size')"
+              [disabled]="!sizeOk && !isActive('size')"
+              (change)="toggleValueRule('size', $event.checked)"
+            >
+              <code>@Size</code>
+            </mat-checkbox>
+            @if (isActive('size')) {
+              <div class="inline-inputs">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>min</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    [value]="validations().size?.min ?? ''"
+                    (input)="setSize('min', $event)"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>max</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    min="0"
+                    [value]="validations().size?.max ?? ''"
+                    (input)="setSize('max', $event)"
+                  />
+                </mat-form-field>
+              </div>
+            }
+          </div>
+
+          <!-- @Min / @Max (or @DecimalMin / @DecimalMax) -->
+          @for (key of boundRules; track key) {
+            @let ok = isCompatible(key);
+            <div
+              class="rule rule--wide"
+              [class.rule--incompatible]="!ok"
+              [matTooltip]="ok ? '' : incompatibleReason(key)"
+            >
+              <mat-checkbox
+                [checked]="isActive(key)"
+                [disabled]="!ok && !isActive(key)"
+                (change)="toggleValueRule(key, $event.checked)"
+              >
+                <code>{{ ruleLabel(key) }}</code>
+              </mat-checkbox>
+              @if (isActive(key)) {
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="value">
+                  <mat-label>valor</mat-label>
+                  <input
+                    matInput
+                    inputmode="decimal"
+                    [value]="validations()[key] ?? ''"
+                    (input)="setBound(key, $event)"
+                  />
+                </mat-form-field>
+              }
+            </div>
+          }
+
+          <!-- @Pattern -->
+          @let patternOk = isCompatible('pattern');
+          <div
+            class="rule rule--wide"
+            [class.rule--incompatible]="!patternOk"
+            [matTooltip]="patternOk ? '' : incompatibleReason('pattern')"
+          >
+            <mat-checkbox
+              [checked]="isActive('pattern')"
+              [disabled]="!patternOk && !isActive('pattern')"
+              (change)="toggleValueRule('pattern', $event.checked)"
+            >
+              <code>@Pattern</code>
+            </mat-checkbox>
+            @if (isActive('pattern')) {
+              <mat-form-field
+                appearance="outline"
+                subscriptSizing="dynamic"
+                class="value value--wide"
+              >
+                <mat-label>regexp</mat-label>
+                <input
+                  matInput
+                  spellcheck="false"
+                  class="mono"
+                  [value]="validations().pattern ?? ''"
+                  (input)="setBound('pattern', $event)"
+                />
+              </mat-form-field>
+            }
+          </div>
+        </div>
+      </fieldset>
+    }
+  }
+
+  <div class="footer">
+    <button mat-button type="button" (click)="store.selectProperty(null)">Concluir</button>
+  </div>
+</section>

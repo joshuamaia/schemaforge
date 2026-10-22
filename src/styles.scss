@@ -1,1 +1,278 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+// ---------------------------------------------------------------------------------------
+// Theme: Material 3 driven by `color-scheme`, so a single class switches light/dark.
+// ---------------------------------------------------------------------------------------
+html {
+  color-scheme: dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        plain-family: var(--sf-font),
+        brand-family: var(--sf-font),
+      ),
+      density: -2,
+    )
+  );
+
+  // Application tokens.
+  --sf-font:
+    Inter, 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --sf-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  --sf-bg: light-dark(#eef0f6, #0a0d12);
+  --sf-surface: light-dark(#ffffff, #11151d);
+  --sf-surface-2: light-dark(#f6f7fb, #161b25);
+  --sf-surface-3: light-dark(#eceff6, #1c2230);
+  --sf-editor-bg: light-dark(#ffffff, #0f131a);
+  --sf-border: light-dark(#dfe3ec, #232a37);
+  --sf-border-strong: light-dark(#c7cdd9, #2f3747);
+  --sf-text: light-dark(#161b26, #e6e9f0);
+  --sf-muted: light-dark(#5d6577, #8b93a5);
+  --sf-accent: light-dark(#6d4aff, #8b6dff);
+  --sf-accent-soft: light-dark(#6d4aff1a, #8b6dff26);
+  --sf-accent-2: light-dark(#0891b2, #22d3ee);
+  --sf-error: light-dark(#d42a3c, #ff6b7a);
+  --sf-error-soft: light-dark(#d42a3c14, #ff6b7a1f);
+  --sf-warning: light-dark(#b76e00, #fbbf24);
+  --sf-warning-soft: light-dark(#b76e0014, #fbbf241f);
+  --sf-success: light-dark(#13804b, #4ade80);
+  --sf-success-soft: light-dark(#13804b14, #4ade801f);
+  --sf-info: light-dark(#1d6fd8, #60a5fa);
+  --sf-highlight: light-dark(#6d4aff1f, #8b6dff2e);
+
+  // Type colors (tree badges).
+  --sf-type-string: light-dark(#1b7f3b, #86efac);
+  --sf-type-number: light-dark(#b45309, #fdba74);
+  --sf-type-boolean: light-dark(#7c3aed, #c4b5fd);
+  --sf-type-object: light-dark(#0b6bcb, #7dd3fc);
+  --sf-type-array: light-dark(#0e7490, #67e8f9);
+  --sf-type-unknown: light-dark(#64748b, #94a3b8);
+  --sf-type-mixed: light-dark(#be185d, #f9a8d4);
+
+  --sf-radius: 10px;
+  --sf-radius-sm: 6px;
+  --sf-header-height: 56px;
+  --sf-status-height: 28px;
+
+  // Material component tweaks.
+  @include mat.button-overrides(
+    (
+      text-label-text-weight: 500,
+      outlined-label-text-weight: 500,
+      filled-label-text-weight: 600,
+    )
+  );
+  @include mat.form-field-overrides(
+    (
+      container-height: 40px,
+      container-vertical-padding: 9px,
+      container-text-size: 13px,
+      outlined-label-text-size: 13px,
+      subscript-text-size: 11px,
+      outlined-container-shape: 8px,
+    )
+  );
+  @include mat.select-overrides(
+    (
+      trigger-text-size: 13px,
+    )
+  );
+  @include mat.tooltip-overrides(
+    (
+      supporting-text-size: 12px,
+    )
+  );
+}
+
+html.theme-light {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--sf-bg);
+  color: var(--sf-text);
+  font-family: var(--sf-font);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+code,
+kbd,
+.mono {
+  font-family: var(--sf-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+}
+
+button {
+  font-family: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Thin scrollbars that follow the theme.
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sf-border-strong) transparent;
+}
+
+// ---------------------------------------------------------------------------------------
+// Monaco decorations (rendered outside component views, hence global).
+// ---------------------------------------------------------------------------------------
+@keyframes sf-flash {
+  from {
+    background-color: light-dark(#6d4aff55, #8b6dff66);
+  }
+  to {
+    background-color: var(--sf-highlight);
+  }
+}
+
+.monaco-editor .sf-highlight-line {
+  background-color: var(--sf-highlight);
+  animation: sf-flash 900ms ease-out;
+}
+
+.monaco-editor .sf-highlight-gutter {
+  border-left: 3px solid var(--sf-accent);
+  margin-left: 3px;
+}
+
+.monaco-editor .sf-highlight-inline {
+  border-radius: 3px;
+  outline: 1px solid var(--sf-accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .monaco-editor .sf-highlight-line {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+// Snackbar variants.
+.sf-snack-success {
+  --mat-snack-bar-button-color: var(--sf-success);
+}
+
+.sf-snack-error {
+  --mat-snack-bar-button-color: var(--sf-error);
+}
+
+// Shared small UI primitives used by several panels.
+.sf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  background: var(--sf-surface-3);
+  color: var(--sf-muted);
+}
+
+.sf-panel-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 4px 8px 4px 14px;
+  border-bottom: 1px solid var(--sf-border);
+  background: var(--sf-surface);
+
+  .sf-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sf-muted);
+    white-space: nowrap;
+  }
+}
+
+.sf-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  text-align: center;
+  color: var(--sf-muted);
+  height: 100%;
+
+  sf-icon {
+    color: var(--sf-border-strong);
+  }
+
+  strong {
+    color: var(--sf-text);
+    font-size: 15px;
+  }
+
+  p {
+    margin: 0;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+}
+
+// Examples menu (rendered in the CDK overlay).
+.sf-examples-menu {
+  .mat-mdc-menu-item .mat-mdc-menu-item-text {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+  }
+
+  .example-title {
+    font-weight: 600;
+  }
+
+  .example-description {
+    font-size: 12px;
+    color: var(--sf-muted);
+  }
+}

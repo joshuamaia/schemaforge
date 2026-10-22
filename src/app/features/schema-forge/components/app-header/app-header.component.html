@@ -1,0 +1,50 @@
+<header class="header">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <sf-icon name="braces" [size]="20" [strokeWidth]="2.25" />
+    </span>
+    <div class="titles">
+      <h1>Schema<span>Forge</span></h1>
+      <p>JSON to Code Generator</p>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button
+      mat-button
+      type="button"
+      class="action"
+      (click)="clearProject()"
+      matTooltip="Limpa o JSON, as personalizações e as opções de geração"
+    >
+      <sf-icon name="eraser" />
+      <span class="label">Limpar projeto</span>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      (click)="theme.toggle()"
+      [matTooltip]="theme.mode() === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'"
+      [attr.aria-label]="theme.mode() === 'dark' ? 'Usar tema claro' : 'Usar tema escuro'"
+    >
+      <sf-icon [name]="theme.mode() === 'dark' ? 'sun' : 'moon'" [size]="18" />
+    </button>
+
+    <button
+      mat-flat-button
+      type="button"
+      class="export"
+      (click)="exportZip()"
+      [disabled]="store.files().length === 0"
+      matTooltip="Baixa todos os arquivos gerados em um ZIP criado no navegador"
+    >
+      <sf-icon name="archive" />
+      <span class="label">Exportar ZIP</span>
+    </button>
+  </div>
+
+  @if (store.analyzing()) {
+    <mat-progress-bar class="progress" mode="indeterminate" aria-label="Analisando JSON" />
+  }
+</header>

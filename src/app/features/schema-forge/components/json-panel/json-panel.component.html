@@ -1,0 +1,77 @@
+<div class="sf-panel-toolbar">
+  <h2 class="sf-panel-title">
+    <sf-icon name="file-json" [size]="15" />
+    JSON de entrada
+  </h2>
+
+  <button
+    mat-icon-button
+    type="button"
+    [matMenuTriggerFor]="examplesMenu"
+    matTooltip="Carregar exemplo"
+    aria-label="Carregar exemplo"
+  >
+    <sf-icon name="sparkles" />
+  </button>
+  <mat-menu #examplesMenu="matMenu" class="sf-examples-menu">
+    @for (example of store.examples; track example.id) {
+      <button mat-menu-item type="button" (click)="loadExample(example)">
+        <span class="example-title">{{ example.title }}</span>
+        <span class="example-description">{{ example.description }}</span>
+      </button>
+    }
+  </mat-menu>
+
+  <input
+    #fileInput
+    class="sr-only"
+    type="file"
+    accept=".json,application/json"
+    tabindex="-1"
+    aria-hidden="true"
+    (change)="importFile(fileInput)"
+  />
+  <button
+    mat-icon-button
+    type="button"
+    (click)="fileInput.click()"
+    matTooltip="Importar arquivo .json"
+    aria-label="Importar arquivo .json"
+  >
+    <sf-icon name="upload" />
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    (click)="format()"
+    [disabled]="!store.jsonText().trim()"
+    matTooltip="Formatar JSON"
+    aria-label="Formatar JSON"
+  >
+    <sf-icon name="wand" />
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    (click)="store.clearJson()"
+    [disabled]="!store.jsonText()"
+    matTooltip="Limpar editor"
+    aria-label="Limpar editor"
+  >
+    <sf-icon name="trash" />
+  </button>
+</div>
+
+<sf-monaco-editor
+  class="editor"
+  language="json"
+  ariaLabel="Editor do JSON de entrada"
+  placeholder="Cole ou digite um JSON aqui, ou carregue um exemplo…"
+  [value]="store.jsonText()"
+  [markers]="markers()"
+  [highlightRanges]="store.jsonHighlights()"
+  (valueChange)="store.setJson($event)"
+  (pasted)="onPaste($event)"
+/>
+
+<sf-diagnostics-list />

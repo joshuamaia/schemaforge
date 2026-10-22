@@ -1,0 +1,129 @@
+<div class="sf-panel-toolbar">
+  <h2 class="sf-panel-title">
+    <sf-icon name="file-code" [size]="15" />
+    Código gerado
+  </h2>
+  <button
+    mat-icon-button
+    type="button"
+    [matTooltip]="optionsOpen() ? 'Ocultar opções de geração' : 'Opções de geração'"
+    [attr.aria-expanded]="optionsOpen()"
+    aria-controls="sf-generation-options"
+    aria-label="Opções de geração"
+    [class.toggled]="optionsOpen()"
+    (click)="optionsOpen.set(!optionsOpen())"
+  >
+    <sf-icon name="settings" />
+  </button>
+</div>
+
+<div class="formats">
+  <mat-button-toggle-group
+    hideSingleSelectionIndicator
+    aria-label="Formato de saída"
+    [value]="store.format()"
+    (change)="store.setFormat($event.value)"
+  >
+    @for (format of formats; track format[0]) {
+      <mat-button-toggle [value]="format[0]">{{ format[1] }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+  @if (store.format() !== 'typescript') {
+    <div class="validation-bar">
+      <mat-slide-toggle
+        [checked]="store.config().java.jakartaValidation"
+        (change)="store.updateJava({ jakartaValidation: $event.checked })"
+        matTooltip="Gera as anotações de jakarta.validation configuradas em cada propriedade"
+      >
+        Jakarta Validation
+      </mat-slide-toggle>
+      <span class="validation-hint">
+        @if (configuredValidations() > 0) {
+          {{ configuredValidations() }}
+          {{ configuredValidations() === 1 ? 'campo com validações' : 'campos com validações' }}
+        } @else {
+          Configure as regras clicando em
+          <sf-icon name="shield-check" [size]="12" /> na estrutura
+        }
+      </span>
+    </div>
+  }
+</div>
+
+@if (optionsOpen()) {
+  <sf-generation-options id="sf-generation-options" class="options" />
+}
+
+@let file = store.activeFile();
+<div class="file-bar">
+  <button
+    type="button"
+    class="explorer-toggle"
+    [attr.aria-expanded]="explorerOpen()"
+    [attr.aria-label]="explorerOpen() ? 'Ocultar explorador' : 'Mostrar explorador'"
+    (click)="explorerOpen.set(!explorerOpen())"
+  >
+    <sf-icon [name]="explorerOpen() ? 'chevron-down' : 'chevron-right'" [size]="14" />
+  </button>
+  <span class="file-path mono" [title]="file?.path ?? ''">{{
+    file?.path ?? 'Nenhum arquivo'
+  }}</span>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Copiar código"
+    aria-label="Copiar código"
+    [disabled]="!file"
+    (click)="copy()"
+  >
+    <sf-icon name="copy" />
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Baixar arquivo"
+    aria-label="Baixar arquivo"
+    [disabled]="!file"
+    (click)="download()"
+  >
+    <sf-icon name="download" />
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Exportar todos (ZIP)"
+    aria-label="Exportar todos os arquivos em ZIP"
+    [disabled]="store.files().length === 0"
+    (click)="exportZip()"
+  >
+    <sf-icon name="archive" />
+  </button>
+</div>
+
+<div class="content" [class.with-explorer]="explorerOpen() && store.files().length > 0">
+  @if (explorerOpen() && store.files().length > 0) {
+    <sf-file-explorer
+      class="explorer"
+      [files]="store.files()"
+      [activePath]="file?.path ?? null"
+      (selectFile)="store.selectFile($event)"
+    />
+  }
+  <div class="code">
+    <sf-monaco-editor
+      class="editor"
+      [readOnly]="true"
+      [language]="language()"
+      ariaLabel="Código gerado (somente leitura)"
+      [value]="file?.content ?? ''"
+      [highlightLines]="store.activeDeclaration()"
+    />
+    @if (!file) {
+      <div class="sf-empty-state empty">
+        <sf-icon name="file-code" [size]="40" [strokeWidth]="1.5" />
+        <strong>Nenhum código gerado</strong>
+        <p>Os arquivos aparecerão aqui assim que um JSON válido com objetos for analisado.</p>
+      </div>
+    }
+  </div>
+</div>

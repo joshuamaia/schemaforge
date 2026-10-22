@@ -1,0 +1,94 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--sf-surface);
+}
+
+.root-model {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--sf-border);
+  font-size: 12px;
+  color: var(--sf-muted);
+
+  label {
+    white-space: nowrap;
+  }
+}
+
+.root-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--sf-type-object);
+  background: var(--sf-surface-3);
+}
+
+.root-input {
+  flex: 1;
+  min-width: 60px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface-2);
+  color: var(--sf-text);
+  font-size: 13px;
+  font-weight: 600;
+
+  &:focus {
+    border-color: var(--sf-accent);
+    outline: none;
+  }
+}
+
+.stale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--sf-warning-soft);
+  color: var(--sf-warning);
+  font-size: 12px;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tree-scroll {
+  flex: 1;
+  min-height: 80px;
+  overflow: auto;
+}
+
+.body.has-editor .tree-scroll {
+  flex: 0 1 40%;
+}
+
+.editor-scroll {
+  flex: 1 1 60%;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--sf-border);
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

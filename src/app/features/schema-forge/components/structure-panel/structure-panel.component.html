@@ -1,0 +1,81 @@
+<div class="sf-panel-toolbar">
+  <h2 class="sf-panel-title">
+    <sf-icon name="list-tree" [size]="15" />
+    Estrutura visual
+  </h2>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Expandir tudo"
+    aria-label="Expandir tudo"
+    [disabled]="!store.schema()"
+    (click)="tree()?.expandAll()"
+  >
+    <sf-icon name="folder-open" />
+  </button>
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Recolher tudo"
+    aria-label="Recolher tudo"
+    [disabled]="!store.schema()"
+    (click)="tree()?.collapseAll()"
+  >
+    <sf-icon name="folder" />
+  </button>
+</div>
+
+@let schema = store.schema();
+@if (schema?.rootModelId) {
+  <div class="root-model">
+    <span class="root-icon" aria-hidden="true"><sf-icon name="box" [size]="15" /></span>
+    <label for="sf-root-name">Modelo principal</label>
+    <input
+      id="sf-root-name"
+      class="root-input mono"
+      spellcheck="false"
+      autocomplete="off"
+      [value]="store.config().rootName"
+      placeholder="Root"
+      (input)="setRootName($event)"
+      matTooltip="Nome da classe/interface principal"
+    />
+    @let objects = store.status().objects;
+    <span class="sf-chip">{{ objects }} {{ objects === 1 ? 'modelo' : 'modelos' }}</span>
+  </div>
+}
+
+@if (store.schemaIsStale()) {
+  <div class="stale" role="status">
+    <sf-icon name="triangle-alert" [size]="14" />
+    JSON inválido — exibindo a última estrutura válida.
+  </div>
+}
+
+<div class="body" [class.has-editor]="store.selectedProperty()">
+  <div class="tree-scroll">
+    @if (schema?.rootModelId) {
+      <sf-structure-tree />
+    } @else if (store.analyzing()) {
+      <div class="sf-empty-state">
+        <sf-icon name="loader" [size]="28" class="spin" />
+        <p>Analisando estrutura…</p>
+      </div>
+    } @else {
+      <div class="sf-empty-state">
+        <sf-icon name="layers" [size]="40" [strokeWidth]="1.5" />
+        <strong>Nenhuma estrutura identificada</strong>
+        <p>
+          Cole um JSON válido no painel de entrada ou carregue um exemplo para visualizar os
+          modelos, tipos e propriedades.
+        </p>
+      </div>
+    }
+  </div>
+
+  @if (store.selectedProperty(); as property) {
+    <div class="editor-scroll">
+      <sf-property-editor [property]="property" />
+    </div>
+  }
+</div>

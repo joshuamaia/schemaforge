@@ -1,0 +1,147 @@
+@if (store.format() === 'typescript') {
+  <div class="grid">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nomes das propriedades</mat-label>
+      <mat-select
+        [value]="typescript().propertyNaming"
+        (selectionChange)="store.updateTypeScript({ propertyNaming: $event.value })"
+      >
+        <mat-option value="original">Preservar nomes do JSON</mat-option>
+        <mat-option value="camelCase">Converter para camelCase</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div class="toggles">
+    <mat-slide-toggle
+      [checked]="typescript().readonlyProperties"
+      (change)="store.updateTypeScript({ readonlyProperties: $event.checked })"
+    >
+      Propriedades readonly
+    </mat-slide-toggle>
+  </div>
+} @else {
+  <div class="grid">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Package base</mat-label>
+      <input
+        matInput
+        spellcheck="false"
+        class="mono"
+        [value]="java().basePackage"
+        placeholder="com.example.model"
+        (input)="store.updateJava({ basePackage: text($event) })"
+      />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Sufixo de classe</mat-label>
+      <input
+        matInput
+        spellcheck="false"
+        [value]="java().classSuffix"
+        placeholder="DTO, Response…"
+        (input)="store.updateJava({ classSuffix: text($event) })"
+      />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Inteiros</mat-label>
+      <mat-select
+        [value]="java().integerType"
+        (selectionChange)="store.updateJava({ integerType: $event.value })"
+      >
+        <mat-option value="Integer">Integer</mat-option>
+        <mat-option value="Long">Long</mat-option>
+      </mat-select>
+      <mat-hint>Valores fora do intervalo usam Long/BigInteger</mat-hint>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Decimais</mat-label>
+      <mat-select
+        [value]="java().decimalType"
+        (selectionChange)="store.updateJava({ decimalType: $event.value })"
+      >
+        <mat-option value="BigDecimal">BigDecimal</mat-option>
+        <mat-option value="Double">Double</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Propriedades opcionais</mat-label>
+      <mat-select
+        [value]="java().optionalHandling"
+        (selectionChange)="store.updateJava({ optionalHandling: $event.value })"
+      >
+        @for (choice of optionalChoices; track choice.value) {
+          <mat-option [value]="choice.value">{{ choice.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nomenclatura dos campos</mat-label>
+      <mat-select
+        [value]="java().fieldNaming"
+        (selectionChange)="store.updateJava({ fieldNaming: $event.value })"
+      >
+        @for (choice of namingChoices; track choice.value) {
+          <mat-option [value]="choice.value">{{ choice.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="toggles">
+    <mat-slide-toggle
+      [checked]="java().jakartaValidation"
+      (change)="store.updateJava({ jakartaValidation: $event.checked })"
+      matTooltip="Gera anotações de jakarta.validation.constraints"
+    >
+      Jakarta Validation
+    </mat-slide-toggle>
+    <mat-slide-toggle
+      [checked]="java().cascadeValidation"
+      [disabled]="!java().jakartaValidation"
+      (change)="store.updateJava({ cascadeValidation: $event.checked })"
+      matTooltip="Adiciona @Valid em objetos aninhados"
+    >
+      &#64;Valid em aninhados
+    </mat-slide-toggle>
+    <mat-slide-toggle
+      [checked]="java().jacksonAnnotations"
+      (change)="store.updateJava({ jacksonAnnotations: $event.checked })"
+      matTooltip="Adiciona @JsonProperty quando o nome Java difere do nome no JSON"
+    >
+      &#64;JsonProperty
+    </mat-slide-toggle>
+    @if (store.format() === 'java-class') {
+      <mat-slide-toggle
+        [checked]="java().defaultConstructor"
+        (change)="store.updateJava({ defaultConstructor: $event.checked })"
+      >
+        Construtor padrão
+      </mat-slide-toggle>
+      <mat-slide-toggle
+        [checked]="java().allArgsConstructor"
+        (change)="store.updateJava({ allArgsConstructor: $event.checked })"
+      >
+        Construtor com todos os campos
+      </mat-slide-toggle>
+    }
+  </div>
+
+  @if (store.format() === 'java-lombok') {
+    <fieldset class="lombok">
+      <legend>Anotações Lombok</legend>
+      @for (choice of lombokChoices; track choice.key) {
+        @let note = lombokNote(choice.key);
+        <mat-checkbox
+          [checked]="lombok()[choice.key] || !!note"
+          [disabled]="!!note"
+          [matTooltip]="note ?? ''"
+          (change)="setLombok(choice.key, $event.checked)"
+        >
+          <code>{{ choice.label }}</code>
+        </mat-checkbox>
+      }
+    </fieldset>
+  } @else if (store.format() === 'java-record') {
+    <p class="hint">Records são imutáveis: Lombok e construtores não se aplicam.</p>
+  }
+}

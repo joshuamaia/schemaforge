@@ -1,0 +1,58 @@
+@if (compact()) {
+  <mat-tab-group
+    class="tabs"
+    mat-stretch-tabs
+    preserveContent
+    animationDuration="150ms"
+    [selectedIndex]="selectedTab()"
+    (selectedIndexChange)="selectedTab.set($event)"
+  >
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <sf-icon name="file-json" [size]="15" />
+        <span class="tab-label">JSON</span>
+        @if (store.errors().length > 0) {
+          <span class="tab-badge tab-badge--error">{{ store.errors().length }}</span>
+        }
+      </ng-template>
+      <sf-json-panel class="panel" />
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <sf-icon name="list-tree" [size]="15" />
+        <span class="tab-label">Estrutura</span>
+      </ng-template>
+      <sf-structure-panel class="panel" />
+    </mat-tab>
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <sf-icon name="file-code" [size]="15" />
+        <span class="tab-label">Código</span>
+        @if (store.files().length > 0) {
+          <span class="tab-badge">{{ store.files().length }}</span>
+        }
+      </ng-template>
+      <sf-code-panel class="panel" />
+    </mat-tab>
+  </mat-tab-group>
+} @else {
+  <div class="panels" [style.grid-template-columns]="columns()">
+    <sf-json-panel class="panel" />
+    <sf-resize-handle
+      label="Redimensionar JSON e estrutura"
+      [value]="sizes()[0]"
+      (resized)="resizeBy(0, $event)"
+      (stepped)="stepBy(0, $event)"
+      (reset)="resetSizes()"
+    />
+    <sf-structure-panel class="panel" />
+    <sf-resize-handle
+      label="Redimensionar estrutura e código"
+      [value]="sizes()[0] + sizes()[1]"
+      (resized)="resizeBy(1, $event)"
+      (stepped)="stepBy(1, $event)"
+      (reset)="resetSizes()"
+    />
+    <sf-code-panel class="panel" />
+  </div>
+}

@@ -1,0 +1,63 @@
+<section class="diagnostics" [class.collapsed]="!expanded()" aria-label="Problemas encontrados">
+  <div class="tabs" role="tablist" aria-label="Tipo de problema">
+    <button
+      type="button"
+      role="tab"
+      class="tab tab--errors"
+      [attr.aria-selected]="tab() === 'errors'"
+      [class.active]="tab() === 'errors'"
+      (click)="selectTab('errors')"
+    >
+      <sf-icon name="circle-x" [size]="14" />
+      Erros
+      <span class="count">{{ store.errors().length }}</span>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab tab--warnings"
+      [attr.aria-selected]="tab() === 'warnings'"
+      [class.active]="tab() === 'warnings'"
+      (click)="selectTab('warnings')"
+    >
+      <sf-icon name="triangle-alert" [size]="14" />
+      Avisos
+      <span class="count">{{ store.warnings().length }}</span>
+    </button>
+    <button
+      type="button"
+      class="collapse"
+      (click)="toggle()"
+      [attr.aria-expanded]="expanded()"
+      [attr.aria-label]="expanded() ? 'Recolher problemas' : 'Expandir problemas'"
+    >
+      <sf-icon [name]="expanded() ? 'chevron-down' : 'chevron-right'" [size]="14" />
+    </button>
+  </div>
+
+  @if (expanded()) {
+    <ul class="list" role="tabpanel">
+      @for (row of rows(); track $index) {
+        <li>
+          <button
+            type="button"
+            class="item"
+            [class]="'item item--' + row.diagnostic.severity"
+            (click)="store.focusDiagnostic(row.diagnostic)"
+          >
+            <sf-icon [name]="iconFor(row.diagnostic)" [size]="14" />
+            <span class="message">{{ row.diagnostic.message }}</span>
+            @if (row.location) {
+              <span class="location">{{ row.location }}</span>
+            }
+          </button>
+        </li>
+      } @empty {
+        <li class="empty">
+          <sf-icon name="circle-check" [size]="14" />
+          {{ tab() === 'errors' ? 'Nenhum erro encontrado.' : 'Nenhum aviso.' }}
+        </li>
+      }
+    </ul>
+  }
+</section>

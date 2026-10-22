@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--sf-header-height);
+  padding: 0 12px 0 16px;
+  background: var(--sf-surface);
+  border-bottom: 1px solid var(--sf-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+  box-shadow: 0 4px 14px #7c5cff40;
+}
+
+.titles {
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+
+    span {
+      color: var(--sf-accent);
+    }
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--sf-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  button sf-icon {
+    margin-right: 6px;
+  }
+
+  button[mat-icon-button] sf-icon {
+    margin: 0;
+  }
+}
+
+.action {
+  color: var(--sf-text);
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+}
+
+@media (max-width: 640px) {
+  .titles p {
+    display: none;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .actions button sf-icon {
+    margin: 0;
+  }
+}
